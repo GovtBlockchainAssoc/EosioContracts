@@ -6,146 +6,6 @@ dao::dao(name self, name code, datastream<const char*> ds) : contract(self, code
 
 dao::~dao() {}
 
-void dao::addmember (const name& member) {
-	require_auth (get_self());
-	member_table m_t (get_self(), get_self().value);
-	auto m_itr = m_t.find (member.value);
-	check (m_itr == m_t.end(), "Account is already a member: " + member.to_string());
-	m_t.emplace (get_self(), [&](auto &m) {
-		m.member = member;
-	});
-}
-
-void dao::removemember (const name& member) {
-	require_auth (get_self());
-	member_table m_t (get_self(), get_self().value);
-	auto m_itr = m_t.find (member.value);
-	check (m_itr != m_t.end(), "Account is not a member: " + member.to_string());
-	m_t.erase (m_itr);
-}
-
-void dao::togglepause () {
-	require_auth (get_self());
-	config_table      config_s (get_self(), get_self().value);
-   	Config c = config_s.get_or_create (get_self(), Config());   
-	if (c.ints.find ("paused") == c.ints.end() || c.ints.at("paused") == 0) {
-		c.ints["paused"]	= 1;
-	} else {
-		c.ints["paused"] 	= 0;
-	} 	
-	config_s.set (c, get_self());
-}
-
-void dao::setconfigname (	const string& key, const name& value) {
-	require_auth (get_self());
-	config_table      config_s (get_self(), get_self().value);
-   	Config c = config_s.get_or_create (get_self(), Config());   
-  	c.names["key"] 	= value;
-    c.updated_date      = current_time_point();
-	config_s.set (c, get_self());
-}
-
-void dao::setconfigint (	const string& key, const uint64_t& value) {
-	require_auth (get_self());
-	config_table      config_s (get_self(), get_self().value);
-   	Config c = config_s.get_or_create (get_self(), Config());   
-  	c.ints["key"] 	= value;
-    c.updated_date      = current_time_point();
-	config_s.set (c, get_self());
-}
-
-
-void dao::updversion (const string& component, const string& version) {
-	config_table      config_s (get_self(), get_self().value);
-   	Config c = config_s.get_or_create (get_self(), Config());   
-	c.strings[component] = version;
-	config_s.set (c, get_self());
-}
-
-void dao::setlastballt ( const name& last_ballot_id) {
-	require_auth (get_self());
-	config_table      config_s (get_self(), get_self().value);
-   	Config c = config_s.get_or_create (get_self(), Config());   
-	c.names["last_ballot_id"]			=	last_ballot_id;
-	config_s.set (c, get_self());
-}
-
-void dao::enroll (	const name& enroller,
-					const name& applicant, 
-					const string& content) {
-
-	validate_config_state ();
-	
-	// this action is linked to the daomain@enrollers permission
-	applicant_table a_t (get_self(), get_self().value);
-	auto a_itr = a_t.find (applicant.value);
-	check (a_itr != a_t.end(), "Applicant not found: " + applicant.to_string());
-
-	config_table      config_s (get_self(), get_self().value);
-   	Config c = config_s.get_or_create (get_self(), Config());  
-
-	asset one_vote = asset { 100, common::S_VOTE };
-	string memo { "Welcome to the GBA DAO!"};
-	action(	
-		permission_level{get_self(), "active"_n}, 
-		c.names.at("telos_decide_contract"), "mint"_n, 
-		make_tuple(applicant, one_vote, memo))
-	.send();
-
-	action(
-		permission_level{get_self(), "active"_n},
-		"eosio"_n, "buyram"_n,
-		make_tuple(get_self(), applicant, common::RAM_ALLOWANCE))
-	.send();
-
-	member_table m_t (get_self(), get_self().value);
-	auto m_itr = m_t.find (applicant.value);
-	check (m_itr == m_t.end(), "Account is already a member: " + applicant.to_string());
-	m_t.emplace (get_self(), [&](auto &m) {
-		m.member = applicant;
-	});
-
-	a_t.erase (a_itr);
-}	
-
-void dao::remapply (const name& applicant) {
-	require_auth (get_self());
-	applicant_table a_t (get_self(), get_self().value);
-	auto a_itr = a_t.find (applicant.value);
-	a_t.erase (a_itr);
-}
-
-void dao::debugmsg (const string& message) {
-	require_auth (get_self());
-	debug (message);
-}
-
-void dao::apply (const name& applicant, 
-						const string& content) {
-
-	validate_config_state();
-	require_auth (applicant);
-
-	member_table m_t (get_self(), get_self().value);
-	auto m_itr = m_t.find (applicant.value);
-	check (m_itr == m_t.end(), "Applicant is already a member: " + applicant.to_string());
-
-	applicant_table a_t (get_self(), get_self().value);
-	auto a_itr = a_t.find (applicant.value);
-
-	if (a_itr != a_t.end()) {
-		a_t.modify (a_itr, get_self(), [&](auto &a) {
-			a.content = content;
-			a.updated_date = current_time_point();
-		});
-	} else {
-		a_t.emplace (get_self(), [&](auto &a) {
-			a.applicant = applicant;
-			a.content = content;
-		});
-	}
-}				
-
 name dao::register_ballot (const name& proposer, 
 							const map<string, string>& strings) 
 {
@@ -177,7 +37,7 @@ name dao::register_ballot (const name& proposer,
 			new_ballot_id, 
 			"poll"_n, 
 			get_self(), 
-			common::S_VOTE, 
+			S_VOTE, 
 			"1token1vote"_n, 
 			options))
    .send();
@@ -271,8 +131,8 @@ void dao::closeprop(const uint64_t& proposal_id) {
 	check (b_itr != b_t.end(), "ballot_id: " + prop.names.at("ballot_id").to_string() + " not found.");
 
 	decidespace::decide::treasuries_table t_t (c.names.at("telos_decide_contract"), c.names.at("telos_decide_contract").value);
-	auto t_itr = t_t.find (common::S_VOTE.code().raw());
-	check (t_itr != t_t.end(), "Treasury: " + common::S_VOTE.code().to_string() + " not found.");
+	auto t_itr = t_t.find (S_VOTE.code().raw());
+	check (t_itr != t_t.end(), "Treasury: " + S_VOTE.code().to_string() + " not found.");
 
 	// calculate the quorum and approval numbers
 	float quorum_perc = (float) c.ints.at("quorum_perc_x100") / (float) 100;

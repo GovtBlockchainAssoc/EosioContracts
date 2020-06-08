@@ -74,6 +74,11 @@ void dao::debug(const string &notes)
     });
 }
 
+void dao::debugmsg (const string& message) {
+	require_auth (get_self());
+	debug (message);
+}
+
 void dao::clrdebugs (const uint64_t& starting_id, const uint64_t& batch_size) {
 	check (has_auth ("gba"_n) || has_auth(get_self()), "Requires higher permission.");
 	debug_table d_t (get_self(), get_self().value);

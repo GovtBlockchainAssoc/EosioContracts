@@ -1,8 +1,6 @@
 #include <dao.hpp>
 
 using namespace daospace;
-using std::map;
-using std::string;
 
 void dao::setconfig(const map<string, name> names,
                     const map<string, string> strings,
@@ -41,6 +39,24 @@ void dao::setconfig(const map<string, name> names,
     config_s.set(c, get_self());
 }
 
+void dao::setconfigname (	const string& key, const name& value) {
+	require_auth (get_self());
+	config_table      config_s (get_self(), get_self().value);
+   	Config c = config_s.get_or_create (get_self(), Config());   
+  	c.names["key"] 	= value;
+    c.updated_date      = current_time_point();
+	config_s.set (c, get_self());
+}
+
+void dao::setconfigint (	const string& key, const uint64_t& value) {
+	require_auth (get_self());
+	config_table      config_s (get_self(), get_self().value);
+   	Config c = config_s.get_or_create (get_self(), Config());   
+  	c.ints["key"] 	= value;
+    c.updated_date      = current_time_point();
+	config_s.set (c, get_self());
+}
+
 uint64_t dao::get_next_sender_id()
 {
     config_table config_s(get_self(), get_self().value);
@@ -50,6 +66,33 @@ uint64_t dao::get_next_sender_id()
     c.ints["last_sender_id"] = return_senderid;
     config_s.set(c, get_self());
     return return_senderid;
+}
+
+void dao::togglepause () {
+	require_auth (get_self());
+	config_table      config_s (get_self(), get_self().value);
+   	Config c = config_s.get_or_create (get_self(), Config());   
+	if (c.ints.find ("paused") == c.ints.end() || c.ints.at("paused") == 0) {
+		c.ints["paused"]	= 1;
+	} else {
+		c.ints["paused"] 	= 0;
+	} 	
+	config_s.set (c, get_self());
+}
+
+void dao::updversion (const string& component, const string& version) {
+	config_table      config_s (get_self(), get_self().value);
+   	Config c = config_s.get_or_create (get_self(), Config());   
+	c.strings[component] = version;
+	config_s.set (c, get_self());
+}
+
+void dao::setlastballt ( const name& last_ballot_id) {
+	require_auth (get_self());
+	config_table      config_s (get_self(), get_self().value);
+   	Config c = config_s.get_or_create (get_self(), Config());   
+	c.names["last_ballot_id"]			=	last_ballot_id;
+	config_s.set (c, get_self());
 }
 
 void dao::validate_config_state()

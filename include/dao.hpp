@@ -6,10 +6,7 @@
 #include <eosio/multi_index.hpp>
 #include <eosio/transaction.hpp>
 
-// #include "bank.hpp"
-#include "common.hpp"
-#include "decide.hpp"
-// #include "config.hpp"
+#include <decide.hpp>
 
 using namespace std;
 using namespace eosio;
@@ -20,10 +17,13 @@ namespace daospace
    CONTRACT dao : public contract
    {
    public:
-      // using contract::contract;
 
       dao(name self, name code, datastream<const char*> ds);
       ~dao();
+
+      symbol         S_REWARD                        = symbol ("REWARD", 2);
+      symbol         S_VOTE                          = symbol ("VOTEPOW", 2);
+      asset          RAM_ALLOWANCE                   = asset {20000, symbol("TLOS", 4)};
 
       struct [[eosio::table, eosio::contract("dao")]] Config
       {

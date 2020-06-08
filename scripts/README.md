@@ -29,10 +29,8 @@ node dao.js -f payloads/config.json --config
 
 ## Making a proposal, approving it, and then closing it
 ```
-node dao.js -f payloads/contribution-test1.json --propose --approve --close
+node dao.js -f payloads/ex-proposal.json --propose --approve --close
 ```
-
-There are many test payloads in tests/proposals/tests.
 
 ## Print a proposal
 ```

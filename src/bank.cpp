@@ -17,7 +17,7 @@ void dao::makepayment(const name &recipient,
     config_table config_s(get_self(), get_self().value);
     Config c = config_s.get_or_create(get_self(), Config());
 
-    if (quantity.symbol == common::S_VOTE)
+    if (quantity.symbol == S_VOTE)
     {
         action(
             permission_level{get_self(), "active"_n},
