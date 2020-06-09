@@ -39,6 +39,13 @@ void dao::setconfig(const map<string, name> names,
     config_s.set(c, get_self());
 }
 
+void dao::resetconfig () {
+    require_auth (get_self());
+      config_table config_s(get_self(), get_self().value);
+    Config c = config_s.get_or_create(get_self(), Config());
+    config_s.remove();
+}
+
 void dao::setconfigname (	const string& key, const name& value) {
 	require_auth (get_self());
 	config_table      config_s (get_self(), get_self().value);

@@ -101,7 +101,7 @@ namespace daospace
           object_table;
 
       struct [[eosio::table, eosio::contract("dao")]] Payment
-    {
+     {
         uint64_t payment_id;
         time_point payment_date = current_time_point();
         name recipient;
@@ -148,7 +148,7 @@ namespace daospace
       ACTION togglepause();
       ACTION debugmsg(const string &message);
       ACTION updversion(const string &component, const string &version);
-
+      ACTION resetconfig ();
       ACTION setconfig(const map<string, name> names,
                        const map<string, string> strings,
                        const map<string, asset> assets,
